@@ -36,7 +36,18 @@ useUnifiedTopology: true
 
 //request parsers
 app.use(express.json());
-//app.use(express.urlencoded({extended : true})); => for views
+app.use(express.urlencoded({extended : true})); //=> for views
+
+app.use((req, res, next) => {
+    console.log(" Request received!");
+    console.log(" Method:", req.method);
+    console.log(" Path:", req.path);
+    console.log(" Body:", req.body);
+    console.log(" Query Params:", req.query);
+    console.log("---------------------------");
+    next();
+}); // for debugging purpose
+
 //set view engine
 //here's the view code
 
@@ -46,7 +57,7 @@ app.use(express.static(path.join(__dirname,"public")));
 //parse cookies
 app.use(cookieParser(process.env.COOKIE_SECRET));
 // routing setup
-app.use('/',loginRouter);
+app.use('/login',loginRouter);
 /*app.use('/home',homeRouter);
 app.use('/favorite',favoriteRouter);
 app.use('/calendar',calendarRouter);
@@ -59,5 +70,5 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 app.listen(process.env.PORT,()=>{
-    console.log(`app listening to port${process.env.PORT}`);
+    console.log(`app listening to port ${process.env.PORT}`);
 });
