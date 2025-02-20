@@ -43,12 +43,12 @@ async function postLogin(req, res, next) {
           }
       
       // Check if the user signed up with Google (no password)
-      if (user.googleId && !user.password) {
+      /*if (user.googleId && !user.password) {
         return res.status(400).json({
           success: false,
           message: "This account was created using Google Sign-In. Please use Google to log in.",
         });
-      }
+      }*/
   // Compare the provided password with the hashed password in the database
       const isPasswordValid = await bcrypt.compare(password, user.password);
       if (!isPasswordValid) {
@@ -159,19 +159,19 @@ function googleAuthCallback(req, res, next) {
   
 // forget and reset password
 async function forgotPassword(req, res, next) {
-    const { email } = req.body;
   
     try {
-     const { email, password } = req.body;
+     const { email } = req.body;
   
           if (!email) {
               return res.status(400).json({ message: "Email is required" });
           }
   
-          const user = await User.findOne({ email });
+          const user = await User.findOne({ email:req.body.email.toLowerCase() });
   
           if (!user) {
-              return res.status(400).json({
+            console.log("No user found for email:", req.body.email);
+              return res.status(400).json({             
                 success: false,
                 message: "User not found. Please sign up.",
               });
@@ -220,50 +220,58 @@ async function forgotPassword(req, res, next) {
       });
     }
   }
-async function resetPassword(req,res,next){
+
+  async function resetPassword(req, res, next) {
+    try {
+      const { email, verificationCode, password } = req.body;
+      console.log("Request body:", req.body);
   
-  try {
-    const { email,verificationCode,password } = req.body;
-    console.log("token ",req.params);
-   
-    const user = await User.findOne({
-      email,
-      verificationCode,
-      verificationCodeExpires: { $gt: Date.now() },
-    });
-
-    if (!user) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid or expired token. Please request a new password reset.",
+      // Find the user with the matching email, verification code, and non-expired code
+      const user = await User.findOne({
+        email,
+        verificationCode,
+        verificationCodeExpires: { $gt: Date.now() },
       });
-    }
-    // Hash the new password
-    console.time("Hash password");
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(password, salt);
-    console.timeEnd("Hash password");
-
-     user.verificationCode = undefined;
-     user.verificationCodeExpires = undefined;
- 
-     // Save the updated user
-     console.time("Save user"); // Start a timer
-     await user.save();
-     console.timeEnd("Save user"); // End the timer
-     res.status(200).json({
+  
+      if (!user) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid or expired token. Please request a new password reset.",
+        });
+      }
+  
+      // Hash the new password
+      console.time("Hash password");
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
+  
+      // Update the user's password and clear the verification code fields
+      await User.updateOne(
+        { _id: user._id },
+        {
+          $set: {
+            password: hashedPassword,
+            verificationCode: undefined,
+            verificationCodeExpires: undefined,
+            isPasswordHashed: true,
+          },
+        }
+      );
+  
+      res.status(200).json({
         success: true,
         message: "Password reset successful. You can now log in with your new password.",
       });
-
-     } catch (error) {
-    console.error("Reset password error:", error);
-    res.status(500).json({
-      success: false,
-      message: "An error occurred. Please try again.",
-    });
+    } catch (error) {
+      console.error("Reset password error:", error);
+      res.status(500).json({
+        success: false,
+        message: "An error occurred. Please try again.",
+      });
+    }
   }
-}
+   
+
 function generateVerificationCode() {
     return crypto.randomInt(100000, 999999).toString(); // Generates a 6-digit code
   }

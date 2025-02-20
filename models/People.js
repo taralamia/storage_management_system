@@ -19,14 +19,22 @@ const peopleSchema = mongoose.Schema(
         lowercase: true,
         unique: true
       },
-     
       password: {
         type: String,
         required: true,
       },
-      
+      avatar: { 
+        type: [String] 
+      },
+      notes:{
+        type:[String]
+      },
+      pdf:{
+        type:[String]
+      },
       verificationCode: String, // Add this field
       verificationCodeExpires: Date,
+      isPasswordHashed: { type: Boolean, default: false },
       role: {
         type: String,
         enum: ["admin", "user"],
@@ -38,6 +46,7 @@ const peopleSchema = mongoose.Schema(
     }
   );
   peopleSchema.pre("save",async function (next) {
+    console.log("Pre-save hook triggered. isPasswordHashed:", this.isPasswordHashed);
     if (!this.googleId && !this.password) {
       return next(new Error("Either Google ID or Password is required"));
     }
@@ -46,6 +55,7 @@ const peopleSchema = mongoose.Schema(
     try {
       const salt = await bcrypt.genSalt(10);
       this.password = await bcrypt.hash(this.password, salt);
+      this.isPasswordHashed = true;
       next();
     } catch (error) {
       next(error);
@@ -55,7 +65,7 @@ const peopleSchema = mongoose.Schema(
   }
   });
   
-  const People = mongoose.model("People", peopleSchema);
+  const People = mongoose.model("People", peopleSchema,"people");
 
 module.exports = People;
   

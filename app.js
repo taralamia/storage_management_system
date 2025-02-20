@@ -51,6 +51,8 @@ app.use((req, res, next) => {
 //set view engine
 //here's the view code
 
+
+
 // set static folder (public folder)
 app.use(express.static(path.join(__dirname,"public")));
 
@@ -58,7 +60,8 @@ app.use(express.static(path.join(__dirname,"public")));
 app.use(cookieParser(process.env.COOKIE_SECRET));
 // routing setup
 app.use('/login',loginRouter);
-/*app.use('/home',homeRouter);
+app.use('/home',homeRouter);
+/*
 app.use('/favorite',favoriteRouter);
 app.use('/calendar',calendarRouter);
 app.use('profile',profileRouter);*/

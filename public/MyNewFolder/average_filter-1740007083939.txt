@@ -1,0 +1,23 @@
+% Read the input image
+inputImage = imread('peppers_color.jpg');
+imshow(inputImage);
+title('Original Image');
+
+% Add salt and pepper noise
+noisyImage = imnoise(inputImage, 'salt & pepper', 0.05);
+figure;
+imshow(noisyImage);
+title('Noisy Image');
+
+% Define average filter kernel
+filterSize = 7;
+averageKernel = ones(filterSize) / (filterSize^2);
+
+% Apply average filter to remove noise
+filteredImage = imfilter(double(noisyImage), averageKernel, 'replicate');
+filteredImage = uint8(filteredImage);
+
+% Display filtered image
+figure;
+imshow(filteredImage);
+title('Filtered Image');
